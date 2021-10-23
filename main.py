@@ -107,19 +107,20 @@ def get_best_location(places_df, city_bbox, category, grids, weighted = False):
 
 
     if len(set(grids_counts)) == 1:
-        return [[]]
+        return None, []
     
     best_index = np.argmax(grids_counts)
 
-    return grids[best_index],  grid_queries_location[best_index]
+    return grids[best_index], grid_queries_location[best_index]
 
-def get_all_queries(places, place_longitude, place_latitude): 
-    locations = []
-    this_places = places[( places['place_latitude'] == place_latitude) & (places['place_longitude'] == place_longitude)] 
-    for i, place in this_places.iterrows(): 
-        locations.append([place['audit_longitude'] , place['audit_latitude']]) 
-    
-    return locations
+# def get_all_queries(places, location):
+#     place_longitude, place_latitude = location
+#     locations = []
+#     this_places = places[( places['place_latitude'] == place_latitude) & (places['place_longitude'] == place_longitude)]
+#     for i, place in this_places.iterrows():
+#         locations.append([place['audit_longitude'] , place['audit_latitude']])
+#
+#     return locations
         
 
 @app.get("/")
@@ -139,6 +140,8 @@ def read_item(category: str, city : str, grid_size: int = 10):
 
     grid_points = list(itertools.product(longitudes, latitudes))
 
-    location = get_best_location(places, city_bbox, category, grid_points)
+    location, user_locations = get_best_location(places, city_bbox, category, grid_points)
 
-    return {"category": category, "city": city, "location": location, "center": grid_points[len(grid_points)//2]}
+    # user_locations = get_all_queries(places, location)
+
+    return [{"category": category, "city": city, "location": location, "center": grid_points[len(grid_points)//2], "users": user_locations}]
