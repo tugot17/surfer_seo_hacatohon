@@ -102,7 +102,7 @@ def get_best_location(places_df, city_bbox, category, grids, weighted = False):
                 if place == g:
                     index = i
             grids_counts[index] = grids_counts[index] + 1
-            grid_queries_location[index]= grid_queries_location[index] + [query_location]
+            grid_queries_location[index] = grid_queries_location[index] + [query_location]
 
 
 
