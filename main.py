@@ -82,6 +82,8 @@ def get_best_location(places_df, city_bbox, category, grids, weighted = False):
     # city_bbox = city_item["city_bbox"]
 
     grids_counts = [0] * len(grids)  # list of grids with counts of closest queries
+    grid_queries_location = [ [] for _ in range(len(grids)) ]
+
     queries_locations_df = get_queries_location(places_df, category, city_bbox)
 
     places = grids.copy()
@@ -93,17 +95,23 @@ def get_best_location(places_df, city_bbox, category, grids, weighted = False):
 
         query_location = [query_longitude, query_latitude]
         place = get_closest_place(query_location, places, weighted)
+        
         if place in grids:
             index = -1
             for i, g in enumerate(grids):
                 if place == g:
                     index = i
             grids_counts[index] = grids_counts[index] + 1
+            grid_queries_location[index]= grid_queries_location[index] + [query_location]
+
+
 
     if len(set(grids_counts)) == 1:
         return [[]]
+    
+    best_index = np.argmax(grids_counts)
 
-    return grids[np.argmax(grids_counts)]
+    return grids[best_index],  grid_queries_location[best_index]
 
 def get_all_queries(places, place_longitude, place_latitude): 
     locations = []
