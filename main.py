@@ -44,22 +44,39 @@ def get_places_location(places_df, category, city_bounding_box):
 
     places_array = []
     for i, row in df.iterrows():
-        places_array.append([row['place_latitude'], row['place_longitude']])
+        places_array.append([row['place_longitude'] , row['place_latitude']])
     return places_array
 
+def get_normalizing_factor(place_location : list, places : list): 
+    distances = 0
+    near_places = []
+    for p in places: 
+        if (p[0]  <  (place_location[0] + 0.005)) & (p[0]  >  (place_location[0] -  0.005)): 
+            if (p[1]  <  (place_location[1] + 0.005)) & (p[1]  >  (place_location[1] -  0.005)): 
+                 distances = distances + distance.euclidean([place_location[0], place_location[1]]  , [p[0], p[1]]) 
+    
+    return distances 
 
-def get_closest_place(query_location, places):
+def get_closest_place(query_location, places, weighted): 
     min_distance = float("inf")
     closest_location = ''
-    for place_location in places:
-        d = distance.euclidean(place_location, query_location)
-        if d < min_distance:
-            min_distance = d
+    
+    for place_location in places: 
+        
+        d = distance.euclidean(place_location, query_location) 
+        if weighted: 
+            normalizing_factor = get_normalizing_factor(place_location, places) 
+            if normalizing_factor > 0: 
+                d  = ( 1 - d )  / normalizing_factor 
+        
+        if d < min_distance: 
+            min_distance = d 
             closest_location = place_location
+            
     return closest_location
 
 
-def get_best_location(places_df, city_bbox, category, grids):
+def get_best_location(places_df, city_bbox, category, grids, weighted = False):
     # city_item = read_item(category, city, grid_size)
     # grids = city_item["grid_points"]
     # city_bbox = city_item["city_bbox"]
@@ -75,7 +92,7 @@ def get_best_location(places_df, city_bbox, category, grids):
         query_longitude = query_location['audit_longitude']
 
         query_location = [query_longitude, query_latitude]
-        place = get_closest_place(query_location, places)
+        place = get_closest_place(query_location, places, weighted)
         if place in grids:
             index = -1
             for i, g in enumerate(grids):
@@ -84,7 +101,7 @@ def get_best_location(places_df, city_bbox, category, grids):
             grids_counts[index] = grids_counts[index] + 1
 
     if len(set(grids_counts)) == 1:
-        return -1
+        return [[]]
 
     return grids[np.argmax(grids_counts)]
 
