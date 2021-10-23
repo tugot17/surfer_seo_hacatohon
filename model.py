@@ -3,9 +3,11 @@ import torch
 from transformers import AutoTokenizer, AutoModel
 from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
+import categories
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # device = 'cpu'
+THRESHOLD = 100
 
 model_names = {
     "herbert-klej-cased-v1": {
@@ -51,13 +53,14 @@ model = xgb.XGBRegressor()
 
 def train(batch_size=256, validate=False):
     places = pd.read_csv('places.csv.gz')
-    mask = places['language'] == 'pl'
-    places = places[mask]
+    places = places[places['language'] == 'pl'][places['category'].map(places['category'].value_counts()) > THRESHOLD]
     X = pd.DataFrame(herbert_forward(list(places['query'])).numpy())
-    X['category'] = places['category']
+    X['category'] = places['category'].map(categories.cat_id)
     X['audit_latitude'] = places['audit_latitude']
     X['audit_longitude'] = places['audit_longitude']
+    X.fillna(len(categories.id_cat))
     y = places['position']
+    # print(y.isna())
     model.fit(X, y)
     if validate:
         y_pred = model.predict(X)
