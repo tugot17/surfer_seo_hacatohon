@@ -105,6 +105,14 @@ def get_best_location(places_df, city_bbox, category, grids, weighted = False):
 
     return grids[np.argmax(grids_counts)]
 
+def get_all_queries(places, place_longitude, place_latitude): 
+    locations = []
+    this_places = places[( places['place_latitude'] == place_latitude) & (places['place_longitude'] == place_longitude)] 
+    for i, place in this_places.iterrows(): 
+        locations.append([place['audit_longitude'] , place['audit_latitude']]) 
+    
+    return locations
+        
 
 @app.get("/")
 def read_item(category: str, city : str, grid_size: int = 10):
