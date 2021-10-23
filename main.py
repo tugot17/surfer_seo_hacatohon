@@ -51,11 +51,25 @@ def get_normalizing_factor(place_location : list, places : list):
     distances = 0
     near_places = []
     for p in places: 
-        if (p[0]  <  (place_location[0] + 0.005)) & (p[0]  >  (place_location[0] -  0.005)): 
-            if (p[1]  <  (place_location[1] + 0.005)) & (p[1]  >  (place_location[1] -  0.005)): 
+        if (p[0]  <  (place_location[0] + 0.01)) & (p[0]  >  (place_location[0] -  0.01)): 
+            if (p[1]  <  (place_location[1] + 0.01)) & (p[1]  >  (place_location[1] -  0.01)): 
                  distances = distances + distance.euclidean([place_location[0], place_location[1]]  , [p[0], p[1]]) 
     
     return distances 
+
+def get_closest_place_weighted(query_location, places, grid):   
+    grid_weights = []  
+    for i, g in enumerate(grid): 
+        f = get_normalizing_factor(g, places) 
+        if f > 0: 
+            grid_weights.append(abs(1 - (distance.euclidean(g, query_location)/f )))
+        else: 
+            grid_weights.append(distance.euclidean(g, query_location))
+    best_index = np.argmax(grid_weights)
+           
+    return grid[best_index]
+
+    
 
 def get_closest_place(query_location, places, weighted): 
     min_distance = float("inf")
@@ -64,10 +78,6 @@ def get_closest_place(query_location, places, weighted):
     for place_location in places: 
         
         d = distance.euclidean(place_location, query_location) 
-        if weighted: 
-            normalizing_factor = get_normalizing_factor(place_location, places) 
-            if normalizing_factor > 0: 
-                d  = ( 1 - d )  / normalizing_factor 
         
         if d < min_distance: 
             min_distance = d 
@@ -94,8 +104,12 @@ def get_best_location(places_df, city_bbox, category, grids, weighted = False):
         query_longitude = query_location['audit_longitude']
 
         query_location = [query_longitude, query_latitude]
-        place = get_closest_place(query_location, places, weighted)
         
+        if not weighted: 
+            place = get_closest_place(query_location, places, weighted)
+        else : 
+            place = get_closest_place_weighted(query_location, places, grids)
+                    
         if place in grids:
             index = -1
             for i, g in enumerate(grids):
